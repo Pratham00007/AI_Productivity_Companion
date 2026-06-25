@@ -1,131 +1,128 @@
-# AI Productivity Assistant - Project State (Current Progress)
+# AI Productivity Assistant
 
-## Project Goal
+## Goal
 
-Build an AI-powered productivity assistant that:
+AI-powered productivity assistant that:
 
-1. Connects with Gmail
-2. Reads emails automatically
-3. Extracts tasks using Gemini AI
-4. Prioritizes tasks
-5. Creates Google Calendar events
-6. Generates preparation plans
-7. Suggests learning resources
-8. Shows everything in a dashboard
-9. Allows editing tasks and syncs changes back to Google Calendar
+* Connects with Gmail
+* Reads inbox emails
+* Extracts actionable tasks using Gemini AI
+* Falls back to OpenAI if Gemini fails
+* Creates Google Calendar events
+* Generates preparation plans
+* Suggests learning resources
+* Stores tasks in MongoDB
+* Allows editing tasks and syncing updates back to Google Calendar
 
 ---
 
-# Current Status
+# Tech Stack
 
-## Completed Features
+Backend:
 
-### Authentication
+* Node.js
+* Express
+* MongoDB
+* Passport Google OAuth
+* Gmail API
+* Google Calendar API
+* Gemini AI
+* OpenAI (fallback)
 
-✅ Google OAuth Login
+Frontend:
+
+* React
+* React Router
+* Axios
+
+---
+
+# Authentication
+
+Route:
+
+GET /auth/google
 
 Scopes:
 
 * profile
 * email
-* Gmail Readonly
-* Google Calendar
+* gmail.readonly
+* calendar
 
-Refresh token is successfully stored.
+Login Flow:
+
+User Login
+↓
+Google OAuth
+↓
+Mongo User Create / Update
+↓
+Session Stored
+↓
+Redirect Dashboard
 
 ---
 
-### Gmail Integration
-
-✅ Gmail connected
-
-Current flow:
-
-Google Login
-↓
-Gmail Access Granted
-↓
-Latest Emails Fetch
-↓
-Email Content Extract
-
-Files:
-
-backend/utils/gmail.js
-
-Functions:
-
-* getGmailClient()
-* getLatestEmails()
-* getEmailContent()
-
----
-
-### Gemini AI Integration
-
-✅ Working
-
-Model:
-
-gemini-3.5-flash
+# Gmail Flow
 
 File:
 
-backend/controllers/emailcontroller.js
+utils/gmail.js
 
-Current Gemini responsibilities:
+Current Behavior:
 
-* Task Extraction
-* Priority Detection
-* Category Detection
+* Reads only Primary Inbox
+* Ignores Social tab
+* Ignores Promotions tab
+* Fetches latest 5 emails
+
+Query:
+
+category:primary newer_than:30d
+
+---
+
+# AI Processing
+
+Primary AI:
+
+Gemini
+
+Fallback AI:
+
+OpenAI
+
+Flow:
+
+Gemini
+↓
+Success → Continue
+
+OR
+
+Gemini Error
+↓
+OpenAI
+↓
+Continue
+
+Extracts:
+
+* Title
+* Deadline
+* Priority
+* Category
 * Estimated Hours
-* Topics Extraction
-* Preparation Plan Generation
+* Topics
+* Preparation Plan
 * Resource Suggestions
 
-Expected Gemini JSON:
-
-{
-"title": "",
-"deadline": "",
-"priority": "",
-"category": "",
-"estimatedHours": 0,
-
-"topics": [],
-
-"preparationPlan": [
-{
-"task": "",
-"daysBefore": 0
-}
-],
-
-"resourceSuggestions": [
-{
-"title": "",
-"platform": "",
-"reason": ""
-}
-]
-}
-
 ---
 
-### MongoDB
+# Mongo Collections
 
-✅ Working
-
-Collections:
-
-Users
-Tasks
-
----
-
-## User Model
-
-backend/models/User.js
+## User
 
 Fields:
 
@@ -135,11 +132,7 @@ Fields:
 * accessToken
 * refreshToken
 
----
-
-## Task Model
-
-backend/models/Task.js
+## Task
 
 Fields:
 
@@ -158,218 +151,56 @@ Fields:
 
 ---
 
-### Duplicate Protection
+# Duplicate Protection
 
-✅ Planned / Partially Added
+Email Processing:
 
-Logic:
+sourceEmailId
 
-Before creating a task:
+Already processed emails are skipped.
 
-Task.findOne({
-sourceEmailId: msg.id
-})
+User Protection:
 
-If task exists:
+googleId unique
 
-continue;
-
-Purpose:
-
-Avoid duplicate task creation when scan runs multiple times.
+email unique
 
 ---
 
-### Google Calendar Integration
-
-✅ Working
+# Calendar Integration
 
 File:
 
-backend/utils/calendar.js
+utils/calendar.js
 
-Current Features:
-
-* createCalendarClient()
-* createTaskEvent()
-
-When task is created:
-
-Mongo Save
-↓
-Google Calendar Event Created
-↓
-calendarEventId Stored
-
-Current Calendar Event Contains:
+Event contains:
 
 * Title
 * Priority
-* Deadline
-* Reminder
+* Category
+* Estimated Hours
+* Topics
+* Preparation Plan
+* Resource Suggestions
+* Status
+
+Reminders:
+
+* 24 Hours Before
+* 1 Hour Before
+* Email Reminder
 
 ---
 
-### Email Scan Flow
+# Task Editing
 
-Current flow:
+Frontend:
 
-User Login
-↓
-Scan Emails API
-↓
-Read Emails
-↓
-Gemini Analysis
-↓
-Task Creation
-↓
-Calendar Event Creation
-↓
-Mongo Save
+Edit Task Modal
 
-File:
+Backend:
 
-backend/controllers/emailcontroller.js
-
-Main Controller:
-
-scanEmails()
-
----
-
-# Backend Structure
-
-backend/
-
-config/
-├── db.js
-├── passport.js
-
-controllers/
-├── emailcontroller.js
-
-middleware/
-├── auth.js
-
-models/
-├── User.js
-├── Task.js
-
-routes/
-├── authrouter.js
-├── emailrouter.js
-├── testrouter.js
-
-utils/
-├── gmail.js
-├── calendar.js
-
-server.js
-
-.env
-
----
-
-# Frontend Structure
-
-frontend/src/
-
-components/
-├── Navbar.jsx
-├── TaskCard.jsx
-
-pages/
-├── Login.jsx
-├── Dashboard.jsx
-├── Tasks.jsx
-├── Calendar.jsx
-
-services/
-├── api.js
-
-App.js
-
-index.js
-
----
-
-# Frontend Features Completed
-
-Login Page
-
-Button:
-
-Login with Google
-
-Redirect:
-
-http://localhost:5000/auth/google
-
----
-
-Dashboard
-
-Current Features:
-
-* Fetch tasks
-* Display tasks
-* Sync Emails Button
-
-Uses:
-
-getTasks()
-scanEmails()
-
----
-
-Tasks Page
-
-Current Features:
-
-* List tasks
-* Mark Done
-
-Uses:
-
-updateTask()
-
----
-
-Calendar Page
-
-Current Features:
-
-Google Calendar iframe embed
-
----
-
-API Layer
-
-frontend/src/services/api.js
-
-Current Functions:
-
-* getTasks()
-* updateTask()
-* deleteTask()
-* scanEmails()
-
-Backend URL:
-
-http://localhost:5000/api
-
----
-
-# Features Still Pending
-
-## High Priority
-
-### Calendar Update Sync
-
-Need:
-
-updateTaskEvent()
+PUT /api/tasks/:id
 
 Flow:
 
@@ -381,172 +212,93 @@ Google Calendar Update
 
 ---
 
-### Preparation Calendar Events
+# Backend Structure
 
-Current:
+backend/
 
-Only Main Event
+config/
 
-Need:
+* db.js
+* passport.js
 
-Interview
-↓
-Generate Preparation Tasks
+controllers/
 
-Example:
+* emailController.js
 
-Interview: 15 July
+middleware/
 
-Preparation:
+* auth.js
 
-8 July → DSA Revision
+models/
 
-10 July → System Design
+* User.js
+* Task.js
 
-13 July → Mock Interview
+routes/
 
-Auto-create these events in Google Calendar.
+* authRoutes.js
+* emailRoutes.js
+* taskrouter.js
 
----
+utils/
 
-### Dashboard Analytics
+* gmail.js
+* calendar.js
 
-Need:
-
-GET /api/dashboard
-
-Response:
-
-{
-"totalTasks": 20,
-"highPriority": 4,
-"todayTasks": 3,
-"upcoming": []
-}
+server.js
 
 ---
 
-### Task Edit Modal
+# Frontend Structure
 
-Need:
+src/
 
-Frontend popup
+pages/
 
-Edit:
+* Login.jsx
+* Dashboard.jsx
 
-* title
-* priority
-* deadline
-* category
+components/
 
-Save
+* Progress.jsx
+* TaskCard.jsx
+* EditTaskModal.jsx
 
-↓
+services/
 
-Update backend
+* api.js
 
-↓
-
-Update Google Calendar
+App.jsx
 
 ---
 
-### Better UI
+# Current Workflow
 
-Current:
-
-Basic inline CSS
-
-Need:
-
-Tailwind CSS
-
-SaaS-style dashboard
-
-Cards:
-
-* Total Tasks
-* High Priority
-* Upcoming Deadlines
-* Today's Tasks
-
----
-
-### Resource Actions
-
-Current:
-
-Only resourceSuggestions stored.
-
-Need:
-
-Buttons:
-
-* Watch Video
-* Open Course
-* Open Docs
-
----
-
-### AI Daily Planner
-
-Future Feature
-
-User opens dashboard.
-
-AI says:
-
-"Today focus on:
-
-1. DSA Revision
-2. Resume Review
-
-You have an interview in 5 days."
-
----
-
-### AI Chat Assistant
-
-Future Feature
-
-Question:
-
-"What should I do today?"
-
-AI reads tasks and calendar.
-
-Returns action plan.
-
----
-
-# Important Environment Variables
-
-GOOGLE_CLIENT_ID=
-
-GOOGLE_CLIENT_SECRET=
-
-GOOGLE_API_KEY=
-
-MONGO_URI=
-
-SESSION_SECRET=
-
----
-
-# Current Working Flow
-
-Google Login
+Login
 ↓
-Gmail Read
+Dashboard
 ↓
-Gemini Extract
+Auto Scan
 ↓
-Task Save
+Primary Inbox (Top 5)
 ↓
-Calendar Event Create
+Gemini
 ↓
-Dashboard Show
+OpenAI Fallback
+↓
+Task Creation
+↓
+Calendar Event Creation
+↓
+Mongo Save
+↓
+Dashboard Display
+↓
+Task Edit
+↓
+Calendar Sync
 
-Everything above is working.
+
+
 
 

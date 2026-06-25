@@ -6,6 +6,9 @@ const { updateTaskEvent } = require("../utils/calendar");
 const Task = require("../models/Task");
 const User = require("../models/User");
 
+const { google } = require("googleapis");
+const { createCalendarClient } = require("../utils/calendar");
+
 // GET all tasks
 router.get(
   "/",
@@ -19,26 +22,24 @@ router.get(
 });
 
 // UPDATE task
-router.put(
-  "/:id",
-  auth,
-  async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
-    // 1. old task get karo
-    const oldTask = await Task.findById(req.params.id);
 
-    // 2. update task in DB
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const updatedTask =
+      await Task.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { returnDocument: "after" }
+      );
 
-    // 3. user fetch karo
-    const user = await User.findById(updatedTask.userId);
+    const user =
+      await User.findById(
+        updatedTask.userId
+      );
 
-    // 4. calendar sync karo (IMPORTANT)
+    // sync calendar only if exists
     if (updatedTask.calendarEventId) {
+
       await updateTaskEvent(
         user,
         updatedTask.calendarEventId,
@@ -47,9 +48,10 @@ router.put(
     }
 
     res.json(updatedTask);
+
   } catch (error) {
+
     res.status(500).json({
-      success: false,
       error: error.message,
     });
   }
@@ -57,13 +59,44 @@ router.put(
 
 
 // DELETE task
-router.delete(
-  "/:id",
-  auth,
-  async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
+router.delete("/:id", async (req, res) => {
+  try {
 
-  res.json({ success: true });
+    const task =
+      await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({
+        error: "Task not found",
+      });
+    }
+
+    // delete from calendar if exists
+    if (task.calendarEventId) {
+
+      const user =
+        await User.findById(task.userId);
+
+      const calendar =
+        createCalendarClient(user);
+
+      await calendar.events.delete({
+        calendarId: "primary",
+        eventId: task.calendarEventId,
+      });
+    }
+
+    await Task.findByIdAndDelete(
+      req.params.id
+    );
+
+    res.json({ success: true });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
 });
 
 module.exports = router;

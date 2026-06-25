@@ -18,10 +18,60 @@ const createCalendarClient = (user) => {
   });
 };
 
+const buildDescription = (task) => {
+
+  const topics =
+    task.topics?.length
+      ? task.topics.map(t => `• ${t}`).join("\n")
+      : "None";
+
+  const plan =
+    task.preparationPlan?.length
+      ? task.preparationPlan
+          .map(
+            p =>
+              `• ${p.task} (${p.daysBefore} days before)`
+          )
+          .join("\n")
+      : "None";
+
+  const resources =
+    task.resourceSuggestions?.length
+      ? task.resourceSuggestions
+          .map(
+            r =>
+              `• ${r.title} (${r.platform})`
+          )
+          .join("\n")
+      : "None";
+
+  return `
+Priority: ${task.priority}
+
+Category: ${task.category}
+
+Estimated Hours:
+${task.estimatedHours}
+
+Topics:
+${topics}
+
+Preparation Plan:
+${plan}
+
+Resources:
+${resources}
+
+Status:
+${task.status}
+`;
+};
+
 const createTaskEvent = async (
   user,
   task
 ) => {
+
   const calendar =
     createCalendarClient(user);
 
@@ -29,9 +79,11 @@ const createTaskEvent = async (
     new Date(task.deadline);
 
   const event = {
+
     summary: task.title,
 
-    description: `Priority: ${task.priority}`,
+    description:
+      buildDescription(task),
 
     start: {
       dateTime:
@@ -43,16 +95,19 @@ const createTaskEvent = async (
     end: {
       dateTime: new Date(
         deadline.getTime() +
-          60 * 60 * 1000
+        60 * 60 * 1000
       ).toISOString(),
+
       timeZone:
         "Asia/Kolkata",
     },
 
     reminders: {
+
       useDefault: false,
 
       overrides: [
+
         {
           method: "popup",
           minutes: 1440,
@@ -62,8 +117,14 @@ const createTaskEvent = async (
           method: "popup",
           minutes: 60,
         },
-      ],
-    },
+
+        {
+          method: "email",
+          minutes: 1440,
+        }
+
+      ]
+    }
   };
 
   const response =
@@ -75,21 +136,42 @@ const createTaskEvent = async (
   return response.data;
 };
 
-const updateTaskEvent = async (user, eventId, task) => {
-  const calendar = createCalendarClient(user);
+const updateTaskEvent = async (
+  user,
+  eventId,
+  task
+) => {
+
+  const calendar =
+    createCalendarClient(user);
 
   const updatedEvent = {
+
     summary: task.title,
-    description: `Priority: ${task.priority}`,
+
+    description:
+      buildDescription(task),
+
     start: {
-      dateTime: new Date(task.deadline).toISOString(),
-      timeZone: "Asia/Kolkata",
+      dateTime:
+        new Date(
+          task.deadline
+        ).toISOString(),
+
+      timeZone:
+        "Asia/Kolkata",
     },
+
     end: {
       dateTime: new Date(
-        new Date(task.deadline).getTime() + 60 * 60 * 1000
+        new Date(
+          task.deadline
+        ).getTime() +
+          60 * 60 * 1000
       ).toISOString(),
-      timeZone: "Asia/Kolkata",
+
+      timeZone:
+        "Asia/Kolkata",
     },
   };
 
@@ -100,7 +182,9 @@ const updateTaskEvent = async (user, eventId, task) => {
   });
 };
 
+
 module.exports = {
   createTaskEvent,
   updateTaskEvent,
+  createCalendarClient,
 };

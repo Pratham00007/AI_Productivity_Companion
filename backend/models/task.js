@@ -28,6 +28,14 @@ estimatedHours: {
 
 topics: [String],
 
+resourceSuggestions: [
+  {
+    title: String,
+    platform: String,
+    reason: String,
+  },
+],
+
 preparationPlan: [
   {
     task: String,
@@ -39,6 +47,8 @@ preparationPlan: [
       type: String,
       default: "Pending",
     },
+
+
 
     calendarEventId: {
   type: String,

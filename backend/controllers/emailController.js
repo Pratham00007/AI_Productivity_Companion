@@ -1,9 +1,7 @@
 const User = require("../models/User");
 const Task = require("../models/Task");
 
-const {
-  createTaskEvent,
-} = require("../utils/calendar");
+const { createTaskEvent } = require("../utils/calendar");
 
 const {
   getLatestEmails,
@@ -29,7 +27,7 @@ const extractTaskFromEmail = async (text) => {
     model: "gemini-3.5-flash",
   });
 
-  const prompt =  `
+  const prompt = `
 You are an AI Productivity Assistant.
 
 Analyze the email carefully.
@@ -97,6 +95,31 @@ Resource types can be:
 Return only resource names.
 Do not generate URLs.
 
+If email is not actionable return:
+
+{
+ "ignore": true
+}
+
+Ignore:
+
+- promotions
+- newsletters
+- marketing emails
+- discount offers
+- social notifications
+- OTP messages
+
+Only create tasks for:
+
+- interviews
+- exams
+- assignments
+- meetings
+- projects
+- applications
+- bills
+
 Email:
 ${text}
 `;
@@ -111,6 +134,130 @@ ${text}
     console.log("❌ Gemini raw response:", rawText);
     throw new Error("Failed to parse Gemini response as JSON");
   }
+};
+
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const extractTaskWithOpenAI = async (text) => {
+  const prompt = `
+  You are an AI Productivity Assistant.
+
+Analyze the email carefully.
+
+Extract:
+
+1. Main task title
+2. Deadline
+3. Priority
+4. Category
+5. Estimated preparation hours
+6. Important topics/skills involved
+7. Preparation plan
+
+Allowed categories:
+
+- Interview
+- Assignment
+- Exam
+- Meeting
+- Bill
+- Project
+- Application
+- Personal
+- General
+
+Return ONLY valid JSON.
+
+Format:
+
+{
+  "title": "",
+  "deadline": "",
+  "priority": "Low | Medium | High",
+  "category": "",
+  "estimatedHours": 0,
+
+  "topics": [],
+
+  "preparationPlan": [
+    {
+      "task": "",
+      "daysBefore": 0
+    }
+  ]
+
+  "resourceSuggestions": [
+    {
+      "title": "",
+      "platform": "",
+      "reason": ""
+    }
+  ]
+
+}
+Also suggest useful learning resources.
+
+Resource types can be:
+
+- YouTube
+- Course
+- Documentation
+- Practice Platform
+
+Return only resource names.
+Do not generate URLs.
+If email is not actionable return:
+
+{
+ "ignore": true
+}
+
+Ignore:
+
+- promotions
+- newsletters
+- marketing emails
+- discount offers
+- social notifications
+- OTP messages
+
+Only create tasks for:
+
+- interviews
+- exams
+- assignments
+- meetings
+- projects
+- applications
+- bills
+
+Email:
+${text}`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+
+    temperature: 0.2,
+
+    messages: [
+      {
+        role: "system",
+        content: "Return ONLY valid JSON.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+
+  const raw = completion.choices[0].message.content;
+
+  return JSON.parse(raw);
 };
 
 // ------------------------------
@@ -134,79 +281,128 @@ const scanEmails = async (req, res) => {
     let tasks = [];
 
     for (let msg of messages) {
-      const existingTask =
-  await Task.findOne({
-    sourceEmailId: msg.id,
-  });
+      const existingTask = await Task.findOne({
+        sourceEmailId: msg.id,
+      });
 
-if (existingTask) {
-  continue;
-}
+      if (existingTask) {
+        continue;
+      }
       try {
         // email content fetch
         const content = await getEmailContent(gmail, msg.id);
 
         // AI extraction
-        const task = await extractTaskFromEmail(content);
+        let task;
+
+        try {
+          task = await extractTaskFromEmail(content);
+          if (task.deadline) {
+
+  const parsed =
+    new Date(
+      task.deadline
+    );
+
+  const currentYear =
+    new Date()
+      .getFullYear();
+
+  if (
+    parsed.getFullYear() <
+    currentYear
+  ) {
+
+    parsed.setFullYear(
+      currentYear
+    );
+
+    task.deadline =
+      parsed.toISOString();
+  }
+
+}
+        } catch (geminiError) {
+          console.log("⚠ Gemini Failed, using OpenAI...");
+
+          task = await extractTaskWithOpenAI(content);
+          if (task.deadline) {
+
+  const parsed =
+    new Date(
+      task.deadline
+    );
+
+  const currentYear =
+    new Date()
+      .getFullYear();
+
+  if (
+    parsed.getFullYear() <
+    currentYear
+  ) {
+
+    parsed.setFullYear(
+      currentYear
+    );
+
+    task.deadline =
+      parsed.toISOString();
+  }
+
+}
+        }
 
         // skip if no task detected
         if (!task || !task.title) continue;
 
-        // save to DB
-    const savedTask =
-  await Task.create({
-    title: task.title,
+if (task.ignore) {
 
-    deadline: task.deadline,
+  console.log(
+    "Ignored email"
+  );
 
-    priority: task.priority,
-
-    category: task.category,
-
-    estimatedHours:
-      task.estimatedHours,
-
-    topics:
-      task.topics || [],
-
-    preparationPlan:
-      task.preparationPlan || [],
-
-    resourceSuggestions:
-      task.resourceSuggestions || [],
-
-    sourceEmailId: msg.id,
-
-    userId: user._id,
-  });
-if (task.deadline) {
-  try {
-
-    const event =
-      await createTaskEvent(
-        user,
-        savedTask
-      );
-
-    savedTask.calendarEventId =
-      event.id;
-
-    await savedTask.save();
-
-    console.log(
-      "✅ Calendar Event Created"
-    );
-
-  } catch (error) {
-
-    console.log(
-      "❌ Calendar Error:",
-      error.message
-    );
-  }
+  continue;
 }
 
-tasks.push(savedTask);
+        // save to DB
+        const savedTask = await Task.create({
+          title: task.title,
+
+          deadline: task.deadline,
+
+          priority: task.priority,
+
+          category: task.category,
+
+          estimatedHours: task.estimatedHours,
+
+          topics: task.topics || [],
+
+          preparationPlan: task.preparationPlan || [],
+
+          resourceSuggestions: task.resourceSuggestions || [],
+          
+
+          sourceEmailId: msg.id,
+
+          userId: user._id,
+        });
+        if (task.deadline) {
+          try {
+            const event = await createTaskEvent(user, savedTask);
+
+            savedTask.calendarEventId = event.id;
+
+            await savedTask.save();
+
+            console.log("✅ Calendar Event Created");
+          } catch (error) {
+            console.log("❌ Calendar Error:", error.message);
+          }
+        }
+
+        tasks.push(savedTask);
       } catch (err) {
         console.log("⚠️ Email skipped:", err.message);
       }

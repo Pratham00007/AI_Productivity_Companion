@@ -6,15 +6,18 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    
 
-    googleId: {
-      type: String,
-    },
+    
+googleId: {
+ type: String,
+ unique: true
+}
+,
+email: {
+ type: String,
+ unique: true
+},
 
     accessToken: {
       type: String,

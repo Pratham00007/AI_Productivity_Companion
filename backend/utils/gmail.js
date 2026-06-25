@@ -17,35 +17,68 @@ const getLatestEmails = async (accessToken) => {
   const gmail = getGmailClient(accessToken);
 
   const res = await gmail.users.messages.list({
-    userId: "me",
-    maxResults: 5,
-  });
+  userId: "me",
+
+  maxResults: 5,
+
+  q: "category:primary newer_than:30d"
+});
 
   return res.data.messages || [];
 };
 
-const getEmailContent = async (gmail, messageId) => {
-  const res = await gmail.users.messages.get({
-    userId: "me",
-    id: messageId,
-  });
+const getEmailContent = async (
+  gmail,
+  messageId
+) => {
 
-  const payload = res.data.payload;
+  const res =
+    await gmail.users.messages.get({
+      userId: "me",
+      id: messageId,
+    });
 
-  let body = "";
+  const extractText = (parts) => {
+
+    let text = "";
+
+    for (const part of parts) {
+
+      if (
+        part.mimeType === "text/plain" &&
+        part.body?.data
+      ) {
+
+        text += Buffer.from(
+          part.body.data,
+          "base64"
+        ).toString("utf8");
+
+      }
+
+      if (part.parts) {
+
+        text += extractText(
+          part.parts
+        );
+
+      }
+
+    }
+
+    return text;
+  };
+
+  const payload =
+    res.data.payload;
 
   if (payload.parts) {
-    body = payload.parts
-      .map((p) =>
-        Buffer.from(
-          p.body.data || "",
-          "base64"
-        ).toString("utf-8")
-      )
-      .join(" ");
+    return extractText(
+      payload.parts
+    );
   }
 
-  return body;
+  return "";
 };
 
 module.exports = {

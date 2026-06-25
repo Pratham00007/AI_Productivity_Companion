@@ -1,4 +1,8 @@
-function TaskCard({ task }) {
+function TaskCard({
+  task,
+  onEdit,
+}) {
+
   return (
     <div
       style={{
@@ -8,18 +12,22 @@ function TaskCard({ task }) {
         borderRadius: "10px",
       }}
     >
+
       <h2>{task.title}</h2>
 
       <p>
-        Priority: {task.priority}
+        Priority:
+        {task.priority}
       </p>
 
       <p>
-        Category: {task.category}
+        Category:
+        {task.category}
       </p>
 
       <p>
-        Hours: {task.estimatedHours}
+        Hours:
+        {task.estimatedHours}
       </p>
 
       <p>
@@ -29,28 +37,65 @@ function TaskCard({ task }) {
           ? new Date(
               task.deadline
             ).toLocaleDateString()
-          : "No deadline"}
+          : "No Deadline"}
       </p>
 
-      <div>
-        {task.calendarEventId ? (
-          <span
-            style={{
-              color: "green",
-            }}
-          >
-            ✅ Added To Calendar
-          </span>
-        ) : (
-          <span
-            style={{
-              color: "red",
-            }}
-          >
-            ❌ Not Synced
-          </span>
+      <p>
+        Status:
+        {" "}
+        {task.status}
+      </p>
+
+      <h4>Topics</h4>
+
+      <ul>
+        {task.topics?.map(
+          topic => (
+            <li key={topic}>
+              {topic}
+            </li>
+          )
         )}
-      </div>
+      </ul>
+
+      <h4>Resources</h4>
+
+      <ul>
+        {task.resourceSuggestions?.map(
+          (r, index) => (
+            <li key={index}>
+              {r.title}
+            </li>
+          )
+        )}
+      </ul>
+
+      {task.calendarEventId ? (
+        <p
+          style={{
+            color: "green",
+          }}
+        >
+          ✅ Added To Calendar
+        </p>
+      ) : (
+        <p
+          style={{
+            color: "red",
+          }}
+        >
+          ❌ Not Synced
+        </p>
+      )}
+
+      <button
+        onClick={() =>
+          onEdit(task)
+        }
+      >
+        Edit
+      </button>
+
     </div>
   );
 }
