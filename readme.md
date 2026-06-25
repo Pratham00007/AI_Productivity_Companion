@@ -1,304 +1,267 @@
-# AI Productivity Assistant
+<div align="center">
 
-## Goal
+<br/>
 
-AI-powered productivity assistant that:
+```
+███████╗  █████╗   █████╗  ███████╗
+██╔════╝ ██╔══██╗ ██╔══██╗ ██╔════╝
+███████╗ ███████║ ███████║ ███████╗
+╚════██║ ██╔══██║ ██╔══██║ ╚════██║
+███████║ ██║  ██║ ██║  ██║ ███████║
+╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚══════╝
+```
 
-* Connects with Gmail
-* Reads inbox emails
-* Extracts actionable tasks using Gemini AI
-* Falls back to OpenAI if Gemini fails
-* Creates Google Calendar events
-* Generates preparation plans
-* Suggests learning resources
-* Stores tasks in MongoDB
-* Allows editing tasks and syncing updates back to Google Calendar
+# ⚡ AI Productivity Companion
 
----
+**Turn your inbox into an intelligent action plan — powered by Gemini AI**
 
-# Tech Stack
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Google AI](https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini)
+[![License](https://img.shields.io/badge/License-MIT-6366F1?style=for-the-badge)](LICENSE)
 
-Backend:
+<br/>
 
-* Node.js
-* Express
-* MongoDB
-* Passport Google OAuth
-* Gmail API
-* Google Calendar API
-* Gemini AI
-* OpenAI (fallback)
+> *Stop manually managing tasks from your inbox.*  
+> *Let AI read, analyze, and schedule everything — automatically.*
 
-Frontend:
+<br/>
 
-* React
-* React Router
-* Axios
+</div>
 
 ---
 
-# Authentication
+## ✨ What It Does
 
-Route:
+```
+📩 Gmail → 🤖 Gemini AI → 📝 Tasks → 📅 Calendar → 🗂 MongoDB
+```
 
-GET /auth/google
-
-Scopes:
-
-* profile
-* email
-* gmail.readonly
-* calendar
-
-Login Flow:
-
-User Login
-↓
-Google OAuth
-↓
-Mongo User Create / Update
-↓
-Session Stored
-↓
-Redirect Dashboard
+Your inbox arrives. Gemini reads it. Tasks are created, calendar events are booked, preparation plans are generated — all without you lifting a finger.
 
 ---
 
-# Gmail Flow
+## 🗺 Feature Highlights
 
-File:
-
-utils/gmail.js
-
-Current Behavior:
-
-* Reads only Primary Inbox
-* Ignores Social tab
-* Ignores Promotions tab
-* Fetches latest 5 emails
-
-Query:
-
-category:primary newer_than:30d
+| Feature | Description |
+|---|---|
+| 📩 **Gmail Integration** | OAuth-connected inbox scanning — reads your top 5 unread emails |
+| 🤖 **Gemini AI Engine** | Extracts actionable tasks, deadlines, and topics from raw email text |
+| 🔁 **OpenAI Fallback** | Automatically falls back to GPT if Gemini is unavailable |
+| 📅 **Calendar Sync** | Creates Google Calendar events with smart scheduling |
+| 📚 **Learning Resources** | Suggests relevant resources for each task automatically |
+| 🗂 **Task Management** | Edit titles, deadlines, priorities, categories, and hours |
+| 🔄 **Live Re-scan** | Re-scan your inbox anytime from the dashboard |
+| 📊 **Stats Dashboard** | Priority breakdown, sync status, and task counters at a glance |
 
 ---
 
-# AI Processing
+## 🔄 Full System Flow
 
-Primary AI:
-
-Gemini
-
-Fallback AI:
-
-OpenAI
-
-Flow:
-
-Gemini
-↓
-Success → Continue
-
-OR
-
-Gemini Error
-↓
-OpenAI
-↓
-Continue
-
-Extracts:
-
-* Title
-* Deadline
-* Priority
-* Category
-* Estimated Hours
-* Topics
-* Preparation Plan
-* Resource Suggestions
-
----
-
-# Mongo Collections
-
-## User
-
-Fields:
-
-* name
-* email
-* googleId
-* accessToken
-* refreshToken
-
-## Task
-
-Fields:
-
-* title
-* deadline
-* priority
-* category
-* estimatedHours
-* topics
-* preparationPlan
-* resourceSuggestions
-* status
-* calendarEventId
-* sourceEmailId
-* userId
-
----
-
-# Duplicate Protection
-
-Email Processing:
-
-sourceEmailId
-
-Already processed emails are skipped.
-
-User Protection:
-
-googleId unique
-
-email unique
+```
+┌─────────┐
+│  Login  │  Google OAuth 2.0
+└────┬────┘
+     │
+     ▼
+┌─────────────┐
+│  Dashboard  │  Loads existing tasks immediately
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────┐
+│  Auto Background │
+│  Scan Triggered  │
+└──────┬───────────┘
+       │
+       ▼
+┌─────────────────────┐
+│  Gmail API          │  Top 5 primary inbox emails
+└──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────┐        ┌───────────────────┐
+│  Gemini AI          │──fail──▶  OpenAI Fallback  │
+│  (Primary)          │        │  (GPT-4o / GPT-4) │
+└──────┬──────────────┘        └──────┬────────────┘
+       │                              │
+       └──────────────┬───────────────┘
+                      ▼
+           ┌────────────────────┐
+           │  Task Extraction   │
+           │  • Title           │
+           │  • Deadline        │
+           │  • Priority        │
+           │  • Category        │
+           │  • Estimated Hours │
+           │  • Topics          │
+           │  • Resources       │
+           └──────┬─────────────┘
+                  │
+          ┌───────┴───────┐
+          ▼               ▼
+┌─────────────────┐  ┌───────────────────┐
+│  Google Calendar│  │  MongoDB          │
+│  Event Created  │  │  Task Persisted   │
+└─────────────────┘  └───────────────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Dashboard Updates  │  Tasks appear with sync status
+└──────┬──────────────┘
+       │
+       ▼
+┌──────────────────────┐
+│  User Edits Task     │  Change title, priority, deadline, etc.
+└──────┬───────────────┘
+       │
+       ▼
+┌──────────────────────┐
+│  Calendar Re-synced  │  Updates propagate back to Google Calendar
+└──────────────────────┘
+```
 
 ---
 
-# Calendar Integration
+## 🏗 Tech Stack
 
-File:
+### Backend
+```
+Node.js + Express        — REST API server
+MongoDB + Mongoose       — Task persistence
+Passport.js              — Google OAuth 2.0 authentication
+Gmail API                — Inbox scanning
+Google Calendar API      — Event creation & sync
+Gemini AI (Primary)      — Email-to-task extraction
+OpenAI (Fallback)        — GPT fallback when Gemini unavailable
+```
 
-utils/calendar.js
-
-Event contains:
-
-* Title
-* Priority
-* Category
-* Estimated Hours
-* Topics
-* Preparation Plan
-* Resource Suggestions
-* Status
-
-Reminders:
-
-* 24 Hours Before
-* 1 Hour Before
-* Email Reminder
-
----
-
-# Task Editing
-
-Frontend:
-
-Edit Task Modal
-
-Backend:
-
-PUT /api/tasks/:id
-
-Flow:
-
-Edit Task
-↓
-Mongo Update
-↓
-Google Calendar Update
+### Frontend
+```
+React 18                 — UI framework
+React Router             — Client-side routing
+Axios                    — HTTP client
+Space Grotesk + Inter    — Typography
+Custom CSS animations    — Smooth transitions & micro-interactions
+```
 
 ---
 
-# Backend Structure
+## ⚡ Quick Start
 
-backend/
+### Prerequisites
 
-config/
+- Node.js 18+
+- MongoDB instance (local or Atlas)
+- Google Cloud project with Gmail API + Calendar API + OAuth enabled
+- Gemini API key (Google AI Studio)
+- OpenAI API key (fallback)
 
-* db.js
-* passport.js
+### 1 — Clone the repo
 
-controllers/
+```bash
+git clone https://github.com/Pratham00007/AI_Productivity_Companion.git
+cd AI_Productivity_Companion
+```
 
-* emailController.js
+### 2 — Configure environment
 
-middleware/
+Create a `.env` file in the `/server` directory:
 
-* auth.js
+```env
+# Server
+PORT=5000
+CLIENT_URL=http://localhost:5000
+SESSION_SECRET=your_super_secret_session_key
 
-models/
+# MongoDB
+MONGO_URI=mongodb+srv://your-cluster.mongodb.net/aicompanion
 
-* User.js
-* Task.js
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
 
-routes/
+# AI
+GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
+```
 
-* authRoutes.js
-* emailRoutes.js
-* taskrouter.js
+### 3 — Install dependencies
 
-utils/
+```bash
+# Backend
+cd backend && npm install
 
-* gmail.js
-* calendar.js
+# Frontend
+cd ../frontend && npm install
+```
 
-server.js
+### 4 — Run the app
+
+```bash
+# Terminal 1 — Backend
+cd server && node server.js
+
+# Terminal 2 — Frontend
+cd frontend && npm start
+```
+
+Visit **http://localhost:5000** → click **Continue with Google** → watch the magic.
+
+
+
+## 🎨 UI Overview
+
+```
+┌──────────────────────────────────────────────┐
+│  ⚡ AI Productivity Companion  👤 John Doe  │  ← Sticky nav
+├──────────────────────────────────────────────┤
+│  12 Tasks  │  3 High │  9 Synced │ 3 Pending │  ← Stats strip
+├──────────────────────────────────────────────┤
+│  🔄 Scanning Gmail for new emails…           │  ← Live scan bar
+├──────────────────────────────────────────────┤
+│  Tasks (12)     [ All ][ High ][ Med ][ Low ]│
+│                                              │
+│  ║ Prepare Q3 presentation         HIGH ▲    │
+│  │ 🗂 Work  ⏱ 3h  📅 Jun 28         [Edit]  │
+│                                              │
+│  ║ Review project proposal         MEDIUM    │
+│  │ 🗂 PM    ⏱ 1.5h  📅 Jul 1        [Edit]  │
+└──────────────────────────────────────────────┘
+```
 
 ---
 
-# Frontend Structure
+## 🛡 Security
 
-src/
-
-pages/
-
-* Login.jsx
-* Dashboard.jsx
-
-components/
-
-* Progress.jsx
-* TaskCard.jsx
-* EditTaskModal.jsx
-
-services/
-
-* api.js
-
-App.jsx
+- Google OAuth 2.0 — no passwords stored
+- Session-based auth with secure httpOnly cookies
+- API keys stored server-side only, never exposed to the client
+- Per-user task isolation in MongoDB
 
 ---
 
-# Current Workflow
+## 🤝 Contributing
 
-Login
-↓
-Dashboard
-↓
-Auto Scan
-↓
-Primary Inbox (Top 5)
-↓
-Gemini
-↓
-OpenAI Fallback
-↓
-Task Creation
-↓
-Calendar Event Creation
-↓
-Mongo Save
-↓
-Dashboard Display
-↓
-Task Edit
-↓
-Calendar Sync
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit your changes: `git commit -m 'feat: add your feature'`
+4. Push and open a Pull Request
 
+---
 
+## 📄 License
 
+MIT — see [LICENSE](LICENSE) for details.
 
+---
 
+<div align="center">
+
+**Built with ⚡ by combining Gmail, Gemini, and a little bit of automation magic.**
+
+*Stop triaging your inbox manually. Let AI do it.*
+
+</div>
