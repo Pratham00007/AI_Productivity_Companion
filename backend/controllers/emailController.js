@@ -1,5 +1,5 @@
-const User = require("../models/User");
-const Task = require("../models/Task");
+const User = require("../models/user");
+const Task = require("../models/task");
 
 const { createTaskEvent } = require("../utils/calendar");
 

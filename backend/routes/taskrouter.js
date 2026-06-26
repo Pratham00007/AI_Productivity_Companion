@@ -3,8 +3,8 @@ const router = express.Router();
 const auth =
 require("../middleware/auth");
 const { updateTaskEvent } = require("../utils/calendar");
-const Task = require("../models/Task");
-const User = require("../models/User");
+const Task = require("../models/task");
+const User = require("../models/user");
 
 const { google } = require("googleapis");
 const { createCalendarClient } = require("../utils/calendar");
