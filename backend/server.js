@@ -4,12 +4,16 @@ const dotenv = require("dotenv");
 require("dotenv").config();
 
 const app = express();
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://ai-productivity-companio-af14c.web.app"
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 const emailRoutes = require("./routes/emailRoutes");
 

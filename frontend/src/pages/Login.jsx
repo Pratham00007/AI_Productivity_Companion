@@ -62,7 +62,7 @@ function Login() {
   }, []);
 
   const login = () => {
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = "https://ai-productivity-companion.onrender.com/auth/google";
   };
 
   return (
