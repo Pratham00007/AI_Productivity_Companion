@@ -7,7 +7,8 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://ai-productivity-companio-af14c.web.app"
+  "https://ai-productivity-companio-af14c.web.app",
+  "https://ai-productivity-companio-af14c.firebaseapp.com"
 ];
 
 app.use(cors({
